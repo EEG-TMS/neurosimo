@@ -55,21 +55,59 @@ TBD.
 
 ## TMS triggering
 
-LabJack T4 is used to trigger the TMS device. In addition, an accessory called [LJTick DigitalOut5V](https://labjack.com/products/ljtick-digitalout5v) is needed for voltage conversion (3.3 V to 5 V) of the trigger signal.
+LabJack T4, connected to the computer via USB, is used to trigger the TMS device. It also sends a loopback trigger to
+the EEG device, which NeuroSimo uses to measure the latency of the pipeline.
 
-In addition, a converter cable to convert from the wire ends to a BNC connector is convenient, so that one can use a
-BNC cable to connect the LabJack outputs to the TMS device. See for example [this one](https://www.amazon.de/dp/B0B97D3WQJ)
-on Amazon.
+### Required hardware
 
-The LabJack outputs used are:
+For one LabJack installation:
 
-- FIO4: TMS trigger
-- FIO5: Loopback trigger
+| Component | Quantity | Notes |
+|---|---|---|
+| [LabJack T4](https://labjack.com/products/labjack-t4) | 1 | |
+| [LJTick-DigitalOut5V](https://labjack.com/products/ljtick-digitalout5v) | 1 | Converts the 3.3 V digital outputs to 5 V |
+| Male BNC-to-wire screw-terminal adapter | 2 | For example, [this one](https://www.amazon.de/dp/B0B97D3WQJ) on Amazon; equivalent adapters from other suppliers are suitable |
+| BNC cable | 2 | Connectors and lengths to suit the TMS device, the EEG device, and their placement |
 
-Overall, the setup looks like this:
+### Connections
 
-LabJack T4 -> LJTick DigitalOut5V (connected to FIO4, FIO5, and GND) -> Converter cable -> BNC cable -> TMS device
+1. Plug the LJTick-DigitalOut5V directly into the LabJack T4's **FIO4/FIO5/GND/VS** terminal block.
+2. Connect two BNC-to-wire adapters to the LJTick's output terminals:
+   - **DOA + GND** → TMS device (trigger)
+   - **DOB + GND** → EEG device (loopback trigger)
+3. Connect each adapter to its respective device using a BNC cable.
 
-After LabJack T4 is connected to the computer via USB, it is automatically detected by NeuroSimo. It can be checked
-by selecting 'example' decider in the user interface, setting up the EEG simulator to stream data, and pressing
-'Start session'. It should send triggers to the TMS device every 2 seconds.
+The LJTick converts the LabJack's 3.3 V digital signals to 5 V. See the [LJTick-DigitalOut5V datasheet](https://support.labjack.com/docs/ljtick-digitalout5v-datasheet) for details.
+
+```mermaid
+flowchart LR
+    PC["NeuroSimo computer"] -->|USB| T4["LabJack T4"]
+
+    subgraph LJ["LJTick-DigitalOut5V"]
+        DOA
+        GND
+        DOB
+    end
+
+    T4 -->|FIO4| DOA
+    T4 -->|FIO5| DOB
+
+    DOA -->|signal| A1["BNC-to-wire adapter"]
+    GND -.->|ground| A1
+    DOB -->|signal| A2["BNC-to-wire adapter"]
+    GND -.->|ground| A2
+
+    A1 -->|BNC cable| TMS["TMS device"]
+    A2 -->|BNC cable| EEG["EEG device"]
+```
+
+Solid lines carry the signal and dashed lines are ground connections.
+
+### Verification
+
+After LabJack T4 is connected to the computer via USB, it is automatically detected by NeuroSimo when a session is
+started. LabJack is enabled by default; if no triggers are sent, check that 'Settings...' -> 'LabJack' ->
+'Enable LabJack' is selected.
+
+The setup can be checked by selecting 'example' decider in the user interface, setting up the EEG simulator to stream
+data, and pressing 'Start'. It should send triggers to the TMS device every 2 seconds.
